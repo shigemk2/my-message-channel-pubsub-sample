@@ -31,6 +31,8 @@ class CompletableApp(val steps:Int) extends App {
   def completedStep() = completion.countDown()
 }
 
-class SubClassificationDriver {
+object SubClassificationDriver extends CompletableApp(6) {
 
 }
+
+
