@@ -1,6 +1,12 @@
 package com.example
 
-import akka.actor.ActorSystem
+import java.math.BigDecimal
+
+import akka.actor.{ActorRef, ActorSystem}
+import java.math.RoundingMode
+
+import akka.event.{EventBus, SubchannelClassification}
+import akka.util.Subclassification
 
 class CompletableApp(val steps:Int) extends App {
   val canComplete = new java.util.concurrent.CountDownLatch(1);
@@ -35,4 +41,40 @@ object SubClassificationDriver extends CompletableApp(6) {
 
 }
 
+case class Money(amount: BigDecimal) {
+  def this(amount: String) = this(new java.math.BigDecimal(amount))
 
+  amount.setScale(4, BigDecimal.ROUND_HALF_UP)
+}
+
+case class Market(name: String)
+
+case class PriceQuoted(market: Market, ticker: Symbol, price: Money)
+
+class QuotesEventBus extends EventBus with SubchannelClassification {
+  type Classifier = Market
+  type Event = PriceQuoted
+  type Subscriber = ActorRef
+
+  protected def classify(event: Event): Classifier = {
+    event.market
+  }
+
+  protected def publish(event: Event, subscriber: Subscriber): Unit = {
+    subscriber ! event
+  }
+
+  protected def subclassification = new Subclassification[Classifier] {
+    def isEqual(
+                 subscribedToClassifier: Classifier,
+                 eventClassifier: Classifier): Boolean = {
+      subscribedToClassifier.equals(eventClassifier)
+    }
+
+    def isSubclass(
+                    subscribedToClassifier: Classifier,
+                    eventClassifier: Classifier): Boolean = {
+      subscribedToClassifier.name.startsWith(eventClassifier.name)
+    }
+  }
+}
