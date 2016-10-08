@@ -2,7 +2,7 @@ package com.example
 
 import java.math.BigDecimal
 
-import akka.actor.{Actor, ActorRef, ActorSystem}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import java.math.RoundingMode
 
 import akka.event.{EventBus, SubchannelClassification}
@@ -38,7 +38,22 @@ class CompletableApp(val steps:Int) extends App {
 }
 
 object SubClassificationDriver extends CompletableApp(6) {
+  val allSubscriber = system.actorOf(Props[AllMarketsSubscriber], "AllMarcketsSubscriber")
+  val nasdaqSubscriber = system.actorOf(Props[NASDAQSubscriber], "NASDAQSubscriber")
+  val nyseSubscriber = system.actorOf(Props[NYSESubscriber], "NYSESubscriber")
 
+  val quoteBus = new QuotesEventBus
+
+  quoteBus.subscribe(allSubscriber, Market("quotes"))
+  quoteBus.subscribe(nasdaqSubscriber, Market("quotes/NASDAQ"))
+  quoteBus.subscribe(nyseSubscriber, Market("quotes/NYSE"))
+
+  quoteBus.publish(PriceQuoted(Market("quotes/NYSE"),Symbol("ORCL"), new Money("37.84")))
+  quoteBus.publish(PriceQuoted(Market("quotes/NASDAQ"),Symbol("MSFT"), new Money("37.16")))
+  quoteBus.publish(PriceQuoted(Market("quotes/DAX"),Symbol("SAP:GR"), new Money("61.95")))
+  quoteBus.publish(PriceQuoted(Market("quotes/NKY"),Symbol("6701:JP"), new Money("237")))
+
+  awaitCompletion
 }
 
 case class Money(amount: BigDecimal) {
