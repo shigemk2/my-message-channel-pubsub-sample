@@ -2,7 +2,7 @@ package com.example
 
 import java.math.BigDecimal
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{Actor, ActorRef, ActorSystem}
 import java.math.RoundingMode
 
 import akka.event.{EventBus, SubchannelClassification}
@@ -78,3 +78,28 @@ class QuotesEventBus extends EventBus with SubchannelClassification {
     }
   }
 }
+
+class AllMarketsSubscriber extends Actor {
+  def receive = {
+    case quote: PriceQuoted =>
+      println(s"AllMarketsSubscriber received: $quote")
+      SubClassificationDriver.completedStep()
+  }
+}
+
+class NASDAQSubscriber extends Actor {
+  def receive = {
+    case quote: PriceQuoted =>
+      println(s"NASDAQSubscriber received: $quote")
+      SubClassificationDriver.completedStep()
+  }
+}
+
+class NYSESubscriber extends Actor {
+  def receive = {
+    case quote: PriceQuoted =>
+      println(s"NYSESubscriber received: $quote")
+      SubClassificationDriver.completedStep()
+  }
+}
+
